@@ -1,0 +1,52 @@
+* {
+	box-sizing: border-box;
+	font-family: sans-serif;
+}
+
+body {
+	width: min(50rem, 90%);
+	margin: 2rem auto 0 auto;
+}
+
+form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+input, .dataset, p {
+	padding: 0.5rem;
+	border: 0.0625rem solid rgb(0, 0, 0);
+	font-size: 1rem;
+}
+
+input[type=submit] {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+a, .dataset-title {
+	padding: 0.125rem 0.5rem;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+a {
+	background-color: rgb(100, 0, 255);
+	color: rgb(255, 255, 255);
+}
+
+.dataset-title, input[type=submit] {
+	background-color: rgb(220, 220, 220);
+}
+
+.dataset-title {
+	background-color: rgb(201, 201, 201);
+	padding: 0.125rem 0.5rem;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+h1 {
+	font-size: 3rem;
+}

@@ -1,0 +1,6 @@
+*venv
+__pycache__
+clips*
+data
+*test*
+config.py
