@@ -1,4 +1,4 @@
-from flask import Flask, Response, request, render_template, send_file, redirect
+from flask import Flask, request, render_template, send_file, redirect
 from authenticate import create_authentication_routes, password_protected
 import datasets
 
