@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, send_file, redirect
+from flask import Flask, Response, request, render_template, send_file, redirect
 from authenticate import create_authentication_routes, password_protected
 import datasets
 
@@ -22,7 +22,12 @@ def get_file():
 	response = request.args.get('response')
 	loop_number = request.args.get('loop_number')
 
-	return datasets.get_random_file_url(dataset, response, loop_number)
+	file_url = datasets.get_random_file_url(dataset, response, loop_number)
+
+	http_response = Response(file_url)
+	http_response.headers['Access-Control-Allow-Origin'] = '*'
+
+	return http_response
 
 
 @app.route('/upload', methods=['POST'])
