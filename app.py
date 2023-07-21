@@ -24,10 +24,7 @@ def get_file():
 
 	file_url = datasets.get_random_file_url(dataset, response, loop_number)
 
-	http_response = Response(file_url)
-	http_response.headers['Access-Control-Allow-Origin'] = '*'
-
-	return http_response
+	return redirect(file_url)
 
 
 @app.route('/upload', methods=['POST'])
@@ -65,6 +62,11 @@ def delete():
 	datasets.delete(dataset)
 
 	return redirect('/')
+
+
+@app.route('/test')
+def test():
+	return render_template('test.html')
 	
 
 if __name__ == '__main__':
