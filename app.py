@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, send_file, redirect
+from flask import Flask, request, render_template, send_file, redirect, url_for
 from authenticate import create_authentication_routes, password_protected
 import datasets
 
@@ -22,9 +22,9 @@ def get_file():
 	response = request.args.get('response')
 	loop_number = request.args.get('loop_number')
 
-	file_url = datasets.get_random_file_url(dataset, response, loop_number)
+	file_path = datasets.get_random_file_path(dataset, response, loop_number)
 
-	return redirect(file_url)
+	return redirect(file_path)
 
 
 @app.route('/upload', methods=['POST'])
@@ -63,11 +63,6 @@ def delete():
 
 	return redirect('/')
 
-
-@app.route('/test')
-def test():
-	return render_template('test.html')
-	
 
 if __name__ == '__main__':
 	app.run(debug=True, host='0.0.0.0', port=3000)

@@ -52,12 +52,11 @@ def create(dataset, file):
 	with ZipFile(file) as zip_file:
 		zip_file.extractall(data_path)
 	
-	for i, path in enumerate(data_path.rglob('*')):
-		if not path.is_file():
-			continue
-
+	paths = [path for path in data_path.rglob('*') if path.is_file() and path.name[0] != '.']
+	
+	for i, path in enumerate(paths):
 		log_data['files'][i] = {
-			'path': str(path),
+			'path': str(path.relative_to(FILES_FOLDER)),
 			'views': 0
 		}
 	
@@ -82,7 +81,7 @@ def delete(dataset):
 	shutil.rmtree(data_path, ignore_errors=True)
 
 
-def get_random_file_url(dataset, response, loop_number):
+def get_random_file_path(dataset, response, loop_number):
 	log_data = get_log_data(dataset)
 
 	responses = log_data['responses']
@@ -115,4 +114,4 @@ def get_random_file_url(dataset, response, loop_number):
 
 	set_log_data(dataset, log_data)
 
-	return selected_video_path
+	return FILES_FOLDER / selected_video_path

@@ -4,3 +4,4 @@ clips*
 data
 *test*
 config.py
+!static/media/*
