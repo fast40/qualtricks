@@ -60,3 +60,7 @@ code {
 	display: inline-block;
 	overflow-wrap: anywhere;
 }
+
+span.colored {
+	color: rgb(255, 0, 0);
+}
