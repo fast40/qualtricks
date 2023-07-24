@@ -22,6 +22,9 @@ def get_file():
 	response = request.args.get('response')
 	loop_number = request.args.get('loop_number')
 
+	if loop_number[0] == '$':
+		return redirect(url_for('static', filename='media/test_video.webm'))
+
 	file_path = datasets.get_random_file_path(dataset, response, loop_number)
 
 	return redirect(file_path)
