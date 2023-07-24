@@ -53,6 +53,9 @@ def create(dataset, file):
 		zip_file.extractall(data_path)
 	
 	for i, path in enumerate(data_path.rglob('*')):
+		if not path.is_file():
+			continue
+
 		log_data['files'][i] = {
 			'path': str(path),
 			'views': 0
