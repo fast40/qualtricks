@@ -9,26 +9,34 @@
 			<a href="/logout">Log Out</a>
 		</nav>
 		{% if datasets %}
-		<h1>Datasets</h1>
+		<h1>Manage existing datasets</h1>
 		{% endif %}
-		<div>
+		<div class="dataset-container">
 			{% for dataset in datasets %}
-			<p class="dataset">
-				<b class="dataset-title">{{ dataset }}</b>
-				<a href="/download?dataset={{ dataset }}">Download</a>
-				<a href="/reset?dataset={{ dataset }}" onclick="return confirm('Are you sure you want to reset this dataset?')">Reset</a>
-				<a href="/delete?dataset={{ dataset }}" onclick="return confirm('Are you sure you want to delete this dataset?')">Delete</a>
-			</p>
+			<div class="dataset">
+				<div>
+					<span class="label">{{ dataset }}</span>
+					<a href="/download?dataset={{ dataset }}" class="button">Download</a>
+				</div>
+				<div>
+					<a href="/reset?dataset={{ dataset }}" class="button dangerous" onclick="return confirm('Are you sure you want to reset? This will DELETE ALL SURVEY DATA contained in the log for this dataset. Be careful!')">Reset</a>
+					<a href="/delete?dataset={{ dataset }}" class="button dangerous" onclick="return confirm('Are you sure you want to delete? This will DELETE ALL SURVEY DATA AND FILES for this dataset. Be careful.')">Delete</a>
+				</div>
+			</div>
 			{% endfor %}
 		</div>
-		<h1>Upload Dataset Zip File</h1>
+		<h1>Create new dataset</h1>
+		<p>To create a new dataset, attach a single zip file containing only the files you wish to use. This will be uploaded to the server, which may take some time if it is large.</p>
+		<p>Also give the dataset a name. You will use this to request random files from the datset in your survey.</p>
 		<form action="/upload" method="post" enctype="multipart/form-data">
 			<input type="file" name="data" required>
 			<input type="text" name="dataset" placeholder="Dataset Name" required>
 			<input type="submit">
 		</form>
-		<h1>Qualtrics Setup</h1>
-		<p>Copy the following code and paste it into the HTML view of a text/graphic question in your Qualtrics survey. When you enter HMTL view, it often makes you click to normal view before you can save the text.</p>
+		<h1>Notes on Qualtrics setup</h1>
+		<p>To display a video in your Qualtrics survey, paste the following code into the "HTML View" of a text/graphic question. Make sure to click back to "Normal View" before exiting the question to make sure Qualtrics saves your changes.</p>
+		<p>Also replace <b>&lt;your_dataset_name&gt;</b> with the name of the dataset that you want to use. This can be found in the white box shown on the left of the dataset above.</p>
 		<code>&lt;video controls&gt;&lt;source id=&quot;video-source&quot; src=&quot;https://www.seardev.com/get_file?dataset=<span class="colored">&lt;your_dataset_name&gt;</span>&amp;response=${e://Field/ResponseID}&amp;loop_number=${lm://CurrentLoopNumber}&quot; type=&quot;video/mp4&quot;&gt;&lt;/video&gt;</code>
+		<p>After you've done that, make sure to turn on "Loop & Merge" for the question block containing the text/graphic question. You can make the question block loop as many or as few times as you want by editing the number of rows in the "Loop & Merge" table (make sure the table has only one column). Note: to add another row, just click a cell in the table.</p>
 	</body>
 </html>

@@ -1,61 +1,68 @@
 * {
 	box-sizing: border-box;
 	font-family: sans-serif;
+
+	--nav-height: 3rem;
+	--body-width: min(50rem, 90%);
+
+	--accent-color: rgb(100, 0, 255);
+	--nav-color: rgb(100, 0, 255);
+
+
+	--dataset-padding: 0.5rem;
 }
 
 body {
-	width: min(50rem, 90%);
-	margin: 2rem auto 0 auto;
+	width: var(--body-width);
+	margin: 0 auto 10rem auto;
+	padding-top: var(--nav-height);
+	background-color: rgb(240, 240, 240);
+}
+
+nav {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: var(--nav-height);
+	padding: 0 calc((100vw - var(--body-width)) / 2);
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	background-color: var(--nav-color);
+}
+
+nav a {
+	text-decoration: none;
+	font-weight: bold;
+	color: rgb(255, 255, 255);
 }
 
 form {
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
-}
-
-input, .dataset, nav {
-	padding: 0.5rem;
-	border: 0.0625rem solid rgb(0, 0, 0);
-	font-size: 1rem;
-}
-
-input[type=submit] {
-	cursor: pointer;
-	font-weight: bold;
-}
-
-a, .dataset-title {
-	padding: 0.125rem 0.5rem;
-	text-decoration: none;
-	font-weight: bold;
-}
-
-a {
-	background-color: rgb(100, 0, 255);
-	color: rgb(255, 255, 255);
-}
-
-.dataset-title, input[type=submit] {
-	background-color: rgb(220, 220, 220);
-}
-
-.dataset-title {
 	background-color: rgb(200, 200, 200);
-	padding: 0.125rem 0.5rem;
-	text-decoration: none;
-	font-weight: bold;
+	padding: 0.5rem;
+}
+
+input {
+	padding: 0.5rem;
+	font-size: 1rem;
+	background-color: rgb(255, 255, 255);
+	border: none;
 }
 
 h1 {
-	font-size: 3rem;
+	font-size: 2.5rem;
+	border-bottom: 0.125rem solid rgb(0, 0, 0);
+	color: rgb(70, 70, 70);
 }
 
 code {
 	font-family: 'Courier New', Courier, monospace;
 	font-weight: bold;
-	background-color: rgb(240, 240, 240);
-	border-radius: 0.25rem;
+	background-color: rgb(255, 255, 255);
 	padding: 1rem;
 	display: inline-block;
 	overflow-wrap: anywhere;
@@ -63,4 +70,49 @@ code {
 
 span.colored {
 	color: rgb(255, 0, 0);
+}
+
+.dataset-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.dataset {
+	display: flex;
+	justify-content: space-between;
+	padding: var(--dataset-padding);
+	background-color: rgb(200, 200, 200);
+}
+
+.dataset > div {
+	display: flex;
+	gap: var(--dataset-padding);
+}
+
+.button, .label {
+	padding-block: 0.25rem;
+	font-weight: bold;
+}
+
+.label {
+	background-color: rgb(255, 255, 255);
+	min-width: 10rem;
+	text-align: center;
+}
+
+.button, input[type=submit] {
+	background-color: rgb(100, 0, 255);
+	color: rgb(255, 255, 255);
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.button {
+	padding-inline: 0.25rem;
+	text-decoration: none;
+}
+
+.button.dangerous {
+	background-color: rgb(200, 0, 0);
 }
