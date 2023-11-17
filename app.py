@@ -41,7 +41,7 @@ def get_url():
 	else:
 		file_path = datasets.get_random_file_path(dataset, response, loop_number)
 	
-	file_url = Response(file_path)
+	file_url = Response(str(file_path))
 	file_url.headers['Access-Control-Allow-Origin'] = '*'
 
 	return file_url
