@@ -30,6 +30,20 @@ def get_file():
 	return redirect(file_path)
 
 
+@app.route('/get_url')
+def get_file():
+	dataset = request.args.get('dataset')
+	response = request.args.get('response')
+	loop_number = request.args.get('loop_number')
+
+	if loop_number[0] == '$':
+		return url_for('static', filename='media/test_video.webm')
+
+	file_path = datasets.get_random_file_path(dataset, response, loop_number)
+
+	return file_path
+
+
 @app.route('/upload', methods=['POST'])
 def upload():
 	file = request.files['data']
