@@ -41,10 +41,10 @@ def get_url():
 	else:
 		file_path = datasets.get_random_file_path(dataset, response, loop_number)
 	
-	response = Response(file_path)
-	response.headers['Access-Control-Allow-Origin'] = '*'
+	file_url = Response(file_path)
+	file_url.headers['Access-Control-Allow-Origin'] = '*'
 
-	return response
+	return file_url
 
 
 @app.route('/upload', methods=['POST'])
