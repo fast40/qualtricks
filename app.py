@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, send_file, redirect, url_for
+from flask import Flask, Response, request, render_template, send_file, redirect, url_for
 from authenticate import create_authentication_routes, password_protected
 import datasets
 
@@ -37,11 +37,14 @@ def get_url():
 	loop_number = request.args.get('loop_number')
 
 	if loop_number[0] == '$':
-		return url_for('static', filename='media/test_video.webm')
+		file_path = url_for('static', filename='media/test_video.webm')
+	else:
+		file_path = datasets.get_random_file_path(dataset, response, loop_number)
+	
+	response = Response(file_path)
+	response.headers['Access-Control-Allow-Origin'] = '*'
 
-	file_path = datasets.get_random_file_path(dataset, response, loop_number)
-
-	return file_path
+	return response
 
 
 @app.route('/upload', methods=['POST'])
