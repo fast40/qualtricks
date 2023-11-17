@@ -31,7 +31,7 @@ def get_file():
 
 
 @app.route('/get_url')
-def get_file():
+def get_url():
 	dataset = request.args.get('dataset')
 	response = request.args.get('response')
 	loop_number = request.args.get('loop_number')
