@@ -90,7 +90,7 @@ def get_random_file_path(dataset, response, loop_number):
 	if response not in responses:  # add the response_id to the log if it isn't already there
 		responses[response] = {}
 	elif loop_number in responses[response]:  # return the saved video if the user has already seen this loop_number
-		return responses[response][loop_number]
+		return FILES_FOLDER / responses[response][loop_number]
 	
 	already_viewed_videos = list(responses[response].values())
 	candidate_video_ids = []
