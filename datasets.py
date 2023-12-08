@@ -1,117 +1,232 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 import pathlib
-import json
 from zipfile import ZipFile
-import shutil
-import random
+import json
+import io
+
+import pymongo
+
+if TYPE_CHECKING:
+    import os
+
+DATA_ROOT_DIR = pathlib.Path('static/data')
+DATABASE = 'qualtricks'
 
 
-LOGS_FOLDER = pathlib.Path('static/data/logs')
-FILES_FOLDER = pathlib.Path('static/data/files')
-
-if not LOGS_FOLDER.exists():
-	LOGS_FOLDER.mkdir(parents=True)
-
-if not FILES_FOLDER.exists():
-	FILES_FOLDER.mkdir(parents=True)
+def get(client: pymongo.MongoClient):
+    return client[DATABASE]['datasets'].distinct('dataset')
 
 
-def get_log_path(dataset):
-	return LOGS_FOLDER.joinpath(f'{dataset}.json')
+def create(dataset: str, zip_file: str | os.PathLike, client: pymongo.MongoClient):
+    dataset_path = DATA_ROOT_DIR.joinpath(dataset)
+
+    if dataset_path.exists():
+        raise FileExistsError('Dataset has already been created once.')
+
+    with ZipFile(zip_file) as zf:
+        zf.extractall(dataset_path)
+    
+    client[DATABASE]['datasets'].insert_many(
+        {
+            'dataset': dataset,
+            'path': str(path.relative_to(DATA_ROOT_DIR)),
+            'views': 0,
+        } for path in dataset_path.rglob('*') if path.is_file() and path.name[0] != '.'
+    )
+
+    client[DATABASE]['datasets'].insert_one(
+        {
+            'dataset': dataset,
+            'views_in_round': 0
+        }
+    )
 
 
-def get_data_path(dataset):
-	return FILES_FOLDER.joinpath(dataset)
+def _reset(dataset: str, client: pymongo.MongoClient):
+    print('WARNING: reset was called. This will reset view counts AND responses.')
+    client[DATABASE]['datasets'].update_many(
+        filter={
+            'dataset': dataset,
+            'views': {'$exists': True}
+        },
+        update={
+            '$set': {'views': 0}
+        }
+    )
+
+    client[DATABASE]['datasets'].update_one(
+        filter={
+            'dataset': dataset,
+            'views_in_round': {'$exists': True}
+        },
+        update={
+            '$set': {'views_in_round': 0}
+        }
+    )
+
+    client[DATABASE]['responses'].delete_many(
+        {
+            'dataset': dataset
+        }
+    )
 
 
-def get_log_data(dataset):
-	log_path = get_log_path(dataset)
+def get_file(dataset: str, response_id: str, loop_number: str, client: pymongo.MongoClient):
+    response = client[DATABASE]['responses'].find_one(
+        filter={
+            'response_id': response_id
+        },
+        projection={
+            '_id': 0,
+            'response_id': 0
+        }
+    )
 
-	with open(log_path, 'r') as log_file:
-		return json.load(log_file)
+    if response is not None and loop_number in response:
+        return response[loop_number]
 
+    excluded_files = list(response.values()) if response is not None else []
+    
+    views_in_round = _get_views_in_round(dataset, client)
+    path = _get_path_and_update_file(dataset, views_in_round, excluded_files, client)
 
-def set_log_data(dataset, data):
-	log_path = get_log_path(dataset)
+    if path is None:
+        raise FileNotFoundError(f'Could not find a file in datset {dataset} for response_id {response_id}')
+    
+    _add_path_to_response(dataset, response_id, loop_number, path, client)
 
-	with open(log_path, 'w') as file:
-		json.dump(data, file, indent=4)
-
-
-def get():
-	return [path.stem for path in FILES_FOLDER.iterdir()]
-
-	
-def create(dataset, file):
-	data_path = get_data_path(dataset)
-
-	log_data = {
-		'responses': {},
-		'files': {}
-	}
-
-	with ZipFile(file) as zip_file:
-		zip_file.extractall(data_path)
-	
-	paths = [path for path in data_path.rglob('*') if path.is_file() and path.name[0] != '.']
-	
-	for i, path in enumerate(paths):
-		log_data['files'][i] = {
-			'path': str(path.relative_to(FILES_FOLDER)),
-			'views': 0
-		}
-	
-	set_log_data(dataset, log_data)
+    return path
 
 
-def reset(dataset):
-	log_data = get_log_data(dataset)
-	log_data['responses'] = {}
+def get_responses_file(dataset: str, client: pymongo.MongoClient):
+    files = list(client[DATABASE]['responses'].find(
+        filter={
+            'dataset': dataset
+        },
+        projection={
+            '_id': 0,
+            'dataset': 0
+        }
+    ))
 
-	for file in log_data['files']:
-		log_data['files'][file]['views'] = 0
+    json_string = json.dumps(files, indent=4).encode('utf-8')
 
-	set_log_data(dataset, log_data)
+    json_file = io.BytesIO()
+    json_file.write(json_string)
+    json_file.seek(0)
 
-
-def delete(dataset):
-	log_path = get_log_path(dataset)
-	data_path = get_data_path(dataset)
-
-	log_path.unlink(missing_ok=True)
-	shutil.rmtree(data_path, ignore_errors=True)
+    return json_file
 
 
-def get_random_file_path(dataset, response, loop_number):
-	log_data = get_log_data(dataset)
+def _get_views_in_round(dataset: str, client: pymongo.MongoClient):
+    views_in_round = client[DATABASE]['datasets'].find_one(
+        filter={
+            'dataset': dataset,
+            'views_in_round': {
+                '$exists': True
+            }
+        }
+    )
 
-	responses = log_data['responses']
-	videos = log_data['files']
+    if views_in_round is None:
+        raise NameError(f'Could not find views_in_round for dataset {dataset}')
+    
+    return views_in_round['views_in_round']
 
-	if response not in responses:  # add the response_id to the log if it isn't already there
-		responses[response] = {}
-	elif loop_number in responses[response]:  # return the saved video if the user has already seen this loop_number
-		return FILES_FOLDER / responses[response][loop_number]
-	
-	already_viewed_videos = list(responses[response].values())
-	candidate_video_ids = []
 
-	for video_id in videos.keys():
-		if videos[video_id]['path'] not in already_viewed_videos:
-			candidate_video_ids.append(video_id)
+def _get_path_and_update_file(dataset: str, views_in_round: int, excluded_files: list, client: pymongo.MongoClient):
+    file = client[DATABASE]['datasets'].find_one_and_update(
+        filter={
+            'dataset': dataset,
+            'views': {
+                '$lte': views_in_round,
+                '$nin': excluded_files
+            }
+        },
+        update={
+            '$inc': {
+                'views': 1
+            }
+        },
+    )
 
-	random.shuffle(candidate_video_ids)
-	candidate_video_ids = sorted(candidate_video_ids, key=lambda video_id: videos[video_id]['views'])
+    if file is not None:
+        return file['path']
 
-	try:
-		selected_video_id = candidate_video_ids[0]
-	except IndexError:
-		return f'Could not find any new videos for response {response}'
+    test_file = client[DATABASE]['datasets'].find_one(
+        filter={
+            'dataset': dataset,
+            'views': {
+                '$lte': views_in_round,
+            }
+        },
+    )
 
-	selected_video_path = videos[selected_video_id]['path']
+    if test_file is not None:
+        return None
+    
+    _set_views_in_round(dataset, views_in_round + 1, client)
 
-	responses[response][loop_number] = selected_video_path
-	videos[selected_video_id]['views'] += 1
+    file = client[DATABASE]['datasets'].find_one_and_update(
+        filter={
+            'dataset': dataset,
+            'views': {
+                '$lte': views_in_round,
+                '$nin': excluded_files
+            }
+        },
+        update={
+            '$inc': {
+                'views': 1
+            }
+        },
+    )
 
-	set_log_data(dataset, log_data)
+    if file is not None:
+        return file['path']
+    else:
+        return None
 
-	return FILES_FOLDER / selected_video_path
+
+
+def _set_views_in_round(dataset: str, views: int, client: pymongo.MongoClient):
+    client[DATABASE]['datasets'].update_one(
+        {
+            'dataset': dataset,
+            'views_in_round': {
+                '$exists': True
+            }
+        },
+        {
+            '$set': {
+                'views_in_round': views
+            }
+        }
+    )
+
+
+def _add_path_to_response(dataset: str, response_id: str, loop_number: str, path: str, client: pymongo.MongoClient):
+    client[DATABASE]['responses'].update_one(
+        filter={
+            'response_id': response_id,
+            'dataset': dataset
+        },
+        update={
+            '$set': {
+                loop_number: path
+            }
+        },
+        upsert=True
+    )
+
+
+# if __name__ == '__main__':
+#     client = pymongo.MongoClient(f'mongodb://127.0.0.1:27017/{DATABASE}')
+
+#     # create('test', 'test.zip', client)
+#     _reset('test', client)
+
+#     for i in range(10):
+#         get_file('test', 'test', str(i), client)
