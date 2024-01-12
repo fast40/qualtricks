@@ -8,19 +8,19 @@
 		<nav>
 			<a href="/logout">Log Out</a>
 		</nav>
-		{% if datasets %}
-		<h1>Manage existing datasets</h1>
+		{% if dataset_names %}
+		<h1>Existing datasets</h1>
 		{% endif %}
 		<div class="dataset-container">
-			{% for dataset in datasets %}
+			{% for dataset_name in dataset_names %}
 			<div class="dataset">
 				<div>
-					<span class="label">{{ dataset }}</span>
-					<a href="/download?dataset={{ dataset }}" class="button">Download</a>
+					<span class="label">{{ dataset_name }}</span>
+					<a href="/download?dataset={{ dataset_name }}" class="button">Download</a>
 				</div>
 				<div>
-					<a href="/reset?dataset={{ dataset }}" class="button dangerous" onclick="return confirm('Are you sure you want to reset? This will DELETE ALL SURVEY DATA contained in the log for this dataset. Be careful!')">Reset</a>
-					<a href="/delete?dataset={{ dataset }}" class="button dangerous" onclick="return confirm('Are you sure you want to delete? This will DELETE ALL SURVEY DATA AND FILES for this dataset. Be careful.')">Delete</a>
+					<!-- <a href="/reset?dataset={{ dataset_name }}" class="button dangerous" onclick="return confirm('Are you sure you want to reset? This will DELETE ALL SURVEY DATA contained in the log for this dataset. Be careful!')">Reset</a>
+					<a href="/delete?dataset={{ dataset_name }}" class="button dangerous" onclick="return confirm('Are you sure you want to delete? This will DELETE ALL SURVEY DATA AND FILES for this dataset. Be careful.')">Delete</a> -->
 				</div>
 			</div>
 			{% endfor %}
