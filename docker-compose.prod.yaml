@@ -16,6 +16,14 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+      - ./data:/app/static/data
     ports:
       - 80:80
       - 443:443
+
+  mongo:
+    image: mongo
+    volumes:
+      - ./db:/data/db
+    expose:
+      - 27017
