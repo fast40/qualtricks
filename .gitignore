@@ -6,4 +6,5 @@ db
 *test*
 config.py
 !**/media/*
+!**/test.html
 *.pem

@@ -68,6 +68,11 @@ def download():
 	return send_file(dataset_log, mimetype='application/json', as_attachment=True, download_name='data.json')
 
 
+@app.route('/test')
+def test():
+	return render_template('test.html')
+
+
 # @app.route('/reset')
 # def reset():
 # 	dataset = request.args.get('dataset')
