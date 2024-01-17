@@ -40,7 +40,7 @@ def get_file():
 
 	file_path = datasets.get_file_fixed(dataset, response, int(loop_number), client)
 
-	return redirect(f'/static/data/{file_path}')
+	return redirect(f'/file/{file_path}')
 
 
 @app.route('/get_url')
