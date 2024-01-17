@@ -7,7 +7,7 @@ services:
       - 8000
     volumes:
       - ./services/web/:/app
-      - ./data:/app/static/data
+      - ./files:/files
     command: gunicorn --bind 0.0.0.0:8000 --workers 3 --max-requests 1 --reload app:app
     depends_on:
       - mongo
@@ -16,6 +16,8 @@ services:
     build:
       context: ./services/nginx
       target: dev
+    volumes:
+      - ./files:/files
     ports:
       - 80:80
     depends_on:

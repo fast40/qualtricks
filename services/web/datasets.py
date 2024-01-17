@@ -5,18 +5,23 @@ import pathlib
 from zipfile import ZipFile
 import json
 import io
+import random
 
 import pymongo
 
 if TYPE_CHECKING:
     import os
 
-DATA_ROOT_DIR = pathlib.Path('static/data')
+DATA_ROOT_DIR = pathlib.Path('/files')
 DATABASE = 'qualtricks'
 
 
 def get(client: pymongo.MongoClient):
     return client[DATABASE]['datasets'].distinct('dataset')
+
+
+def get_files(dataset: str, client: pymongo.MongoClient):
+    return list(client[DATABASE]['datasets'].find({'dataset': dataset, 'path': {'$exists': True}}))
 
 
 def create(dataset: str, zip_file: str | os.PathLike, client: pymongo.MongoClient):
@@ -28,61 +33,39 @@ def create(dataset: str, zip_file: str | os.PathLike, client: pymongo.MongoClien
     with ZipFile(zip_file) as zf:
         zf.extractall(dataset_path)
     
-    client[DATABASE]['datasets'].insert_many(
-        {
-            'dataset': dataset,
-            'path': str(path.relative_to(DATA_ROOT_DIR)),
-            'views': 0,
-        } for path in dataset_path.rglob('*') if path.is_file() and path.name[0] != '.'
-    )
+    client[DATABASE]['datasets'].insert_many({
+        'dataset': dataset,
+        'path': str(path.relative_to(DATA_ROOT_DIR)),
+        'views': 0,
+        'loop_number': 0
+    } for path in dataset_path.rglob('*') if path.is_file() and path.name[0] != '.')
 
-    client[DATABASE]['datasets'].insert_one(
-        {
-            'dataset': dataset,
-            'views_in_round': 0
-        }
-    )
+    client[DATABASE]['datasets'].insert_one({
+        'dataset': dataset,
+        'views_in_round': 0
+    })
+
+    shuffle(dataset, client)
+
+  
+def shuffle(dataset: str, client: pymongo.MongoClient):
+    files = list(client[DATABASE]['datasets'].find({'dataset': dataset, 'path': {'$exists': True}}))
+
+    random.shuffle(files)
+
+    for i, file in enumerate(files):
+        client[DATABASE]['datasets'].update_one({'_id': file['_id']}, {'$set': {'loop_number': i + 1}})
 
 
 def _reset(dataset: str, client: pymongo.MongoClient):
     print('WARNING: reset was called. This will reset view counts AND responses.')
-    client[DATABASE]['datasets'].update_many(
-        filter={
-            'dataset': dataset,
-            'views': {'$exists': True}
-        },
-        update={
-            '$set': {'views': 0}
-        }
-    )
-
-    client[DATABASE]['datasets'].update_one(
-        filter={
-            'dataset': dataset,
-            'views_in_round': {'$exists': True}
-        },
-        update={
-            '$set': {'views_in_round': 0}
-        }
-    )
-
-    client[DATABASE]['responses'].delete_many(
-        {
-            'dataset': dataset
-        }
-    )
+    client[DATABASE]['datasets'].update_many(filter={'dataset': dataset, 'views': {'$exists': True}}, update={'$set': {'views': 0}})
+    client[DATABASE]['datasets'].update_one(filter={'dataset': dataset, 'views_in_round': {'$exists': True}}, update={'$set': {'views_in_round': 0}})
+    client[DATABASE]['responses'].delete_many({'dataset': dataset})
 
 
-def get_file(dataset: str, response_id: str, loop_number: str, client: pymongo.MongoClient):
-    response = client[DATABASE]['responses'].find_one(
-        filter={
-            'response_id': response_id
-        },
-        projection={
-            '_id': 0,
-            'response_id': 0
-        }
-    )
+def get_file(dataset: str, ordering: str, response_id: str, loop_number: str, client: pymongo.MongoClient):
+    response = client[DATABASE]['responses'].find_one(filter={'response_id': response_id}, projection={'_id': 0, 'response_id': 0})
 
     if response is not None and loop_number in response:
         return response[loop_number]
@@ -100,16 +83,20 @@ def get_file(dataset: str, response_id: str, loop_number: str, client: pymongo.M
     return path
 
 
+def get_file_fixed(dataset: str, response_id: str, loop_number: int, client: pymongo.MongoClient):
+    response = client[DATABASE]['responses'].find_one(filter={'response_id': response_id}, projection={'_id': 0, 'response_id': 0})
+
+    if response is not None and loop_number in response:
+        return response[loop_number]
+
+    file = client[DATABASE]['datasets'].find_one({'dataset': dataset, 'loop_number': loop_number}) 
+
+    return file['path']
+
+
+ 
 def get_responses_file(dataset: str, client: pymongo.MongoClient):
-    files = list(client[DATABASE]['responses'].find(
-        filter={
-            'dataset': dataset
-        },
-        projection={
-            '_id': 0,
-            'dataset': 0
-        }
-    ))
+    files = list(client[DATABASE]['responses'].find(filter={'dataset': dataset}, projection={'_id': 0, 'dataset': 0}))
 
     json_string = json.dumps(files, indent=4).encode('utf-8')
 
@@ -120,15 +107,9 @@ def get_responses_file(dataset: str, client: pymongo.MongoClient):
     return json_file
 
 
-def _get_views_in_round(dataset: str, client: pymongo.MongoClient):
+def _get_views_in_round(dataset: str, client: pymongo.MongoClient):  
     views_in_round = client[DATABASE]['datasets'].find_one(
-        filter={
-            'dataset': dataset,
-            'views_in_round': {
-                '$exists': True
-            }
-        }
-    )
+        filter={'dataset': dataset, 'views_in_round': {'$exists': True}})
 
     if views_in_round is None:
         raise NameError(f'Could not find views_in_round for dataset {dataset}')
@@ -188,7 +169,6 @@ def _get_path_and_update_file(dataset: str, views_in_round: int, excluded_files:
         return file['path']
     else:
         return None
-
 
 
 def _set_views_in_round(dataset: str, views: int, client: pymongo.MongoClient):

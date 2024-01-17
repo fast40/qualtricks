@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% block content %}
+<div>
+    <h1>Tutorial</h1>
+    <p>If you're not sure where to start, watch this <a href="/test">tutorial</a>.</p>
+</div>
+<div>
+    <h1>Create New Dataset</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="zip_file" required>
+        <input type="text" name="dataset_name" placeholder="Dataset Name" required>
+        <input type="submit" value="Create Dataset">
+    </form>
+</div>
+{% if dataset_names %}
+<div>
+    <h1>Existing Datasets</h1>
+    <div>
+        {% for dataset_name in dataset_names %}
+        <div>
+            <a href="/dataset/{{ dataset_name }}"><b>{{ dataset_name }}</b></a>
+            (<a href="/download?dataset={{ dataset_name }}">Download Responses</a>)
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<div>
+    <h1>Code Generator</h1>
+    <p>Use this menu to generate the HTML and Javascript code to paste into your Qualtrics survey.</p>
+    <form action="/setup" onsubmit="event.preventDefault(); generateCode();">
+        <select name="dataset_name" required>
+            <option value="" selected disabled><strong>-- dataset name --</strong></option>
+            {% for dataset_name in dataset_names %}
+            <option value="{{ dataset_name }}">{{ dataset_name }}</option>
+            {% endfor %}
+        </select>
+        <select name="ordering" required>
+            <option value="" selected disabled><strong>-- file ordering across surveys --</strong></option>
+            <option value="random_replacement">random (replacement)</option>
+            <option value="random_no_replacement">random (no replacement)</option>
+            <option value="fixed">fixed ordering</option>
+        </select>
+        <input type="submit" value="Generate Code">
+    </form>
+    <div style="display: none;">
+        <h2>Javascript</h2>
+        <code id="javascript"></code>
+        <h2>HTML</h2>
+        <code id="html"></code>
+    </div>
+</div>
+{% endif %}
+<script src="{{ url_for('static', filename='javascript/generate.js') }}"></script>
+{% endblock content %}

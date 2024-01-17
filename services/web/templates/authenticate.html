@@ -2,11 +2,10 @@
 <html>
 	<head>
 		<title>Authenticate</title>
-		<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 	</head>
 	<body>
 		<form action="/authenticate?redirect={{ redirect_url }}" method="post" enctype="multipart/form-data">
-			<input type="password" name="password" placeholder="Password" required>
+			<input type="password" name="password" placeholder="Accesss code" required autofocus>
 			<input type="submit">
 		</form>
 	</body>

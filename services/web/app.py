@@ -1,4 +1,4 @@
-from flask import Flask, Response, request, render_template, send_file, redirect, url_for
+from flask import Flask, Response, request, render_template, send_file, redirect, url_for, abort, send_from_directory
 from flask_pymongo import PyMongo
 from authenticate import create_authentication_routes, password_protected
 import datasets
@@ -7,27 +7,38 @@ app = Flask(__name__)
 app.config.from_pyfile('config.py')
 client = PyMongo(app).cx
 
+if client is None:
+	raise Exception('There was an issue getting the database client.')
+
+
 create_authentication_routes(app, 'authenticate.html')
 
 
 @app.route('/')
 @password_protected
 def index():
-	dataset_names = datasets.get(client)
+	return render_template('index.html', dataset_names=datasets.get(client))
 
-	return render_template('upload.html', dataset_names=dataset_names)
+
+@app.route('/dataset/<dataset_id>')
+@password_protected
+def dataset(dataset_id):
+	files = datasets.get_files(dataset_id, client)
+
+	return render_template('dataset.html', datasets=datasets.get(client), files=files)
 
 
 @app.route('/get_file')
 def get_file():
 	dataset = request.args.get('dataset')
+	ordering = request.args.get('ordering')
 	response = request.args.get('response')
 	loop_number = request.args.get('loop_number')
 
-	if dataset is None or response is None or loop_number is None or loop_number[0] == '$':  # loop_number[0] will be $ when building the qualtrics survey
+	if dataset is None or ordering is None or response is None or loop_number is None or loop_number[0] == '$':  # loop_number[0] will be $ when building the qualtrics survey
 		return redirect(url_for('static', filename='media/test_video.webm'))
 
-	file_path = datasets.get_file(dataset, response, loop_number, client)
+	file_path = datasets.get_file_fixed(dataset, response, int(loop_number), client)
 
 	return redirect(f'/static/data/{file_path}')
 
@@ -35,13 +46,14 @@ def get_file():
 @app.route('/get_url')
 def get_url():
 	dataset = request.args.get('dataset')
+	ordering = request.args.get('ordering')
 	response = request.args.get('response')
 	loop_number = request.args.get('loop_number')
 
-	if dataset is None or response is None or loop_number is None or loop_number[0] == '$':  # loop_number[0] will be $ when building the qualtrics survey
+	if dataset is None or ordering is None or response is None or loop_number is None or loop_number[0] == '$':  # loop_number[0] will be $ when building the qualtrics survey
 		file_path = url_for('static', filename='media/test_video.webm')
-	else:
-		file_path = datasets.get_file(dataset, response, loop_number, client)
+	else:  # elif ordering == 'fixed':
+		file_path = datasets.get_file_fixed(dataset, response, int(loop_number), client)
 	
 	file_url = Response(str(file_path))
 	file_url.headers['Access-Control-Allow-Origin'] = '*'
@@ -51,10 +63,10 @@ def get_url():
 
 @app.route('/upload', methods=['POST'])
 def upload():
-	file = request.files['data']
-	dataset = request.form['dataset']
+	zip_file = request.files['zip_file']
+	dataset = request.form['dataset_name']
 
-	datasets.create(dataset, file, client)
+	datasets.create(dataset, zip_file, client)
 
 	return redirect('/')
 
@@ -70,7 +82,7 @@ def download():
 
 @app.route('/test')
 def test():
-	return render_template('test.html')
+	return '/test'
 
 
 # @app.route('/reset')

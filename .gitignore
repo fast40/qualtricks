@@ -8,3 +8,5 @@ config.py
 !**/media/*
 !**/test.html
 *.pem
+notes.txt
+*clip*

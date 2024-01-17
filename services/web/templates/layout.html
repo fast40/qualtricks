@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Survey Tool</title>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+	</head>
+	<body>
+		<nav>
+			<div>
+				<a href="/">Survey Tool</a>
+			</div>
+			<div>
+				<a href="/logout">Log Out</a>
+			</div>
+		</nav>
+        <div>
+            {% block content %}
+            {% endblock content %}
+        </div>
+	</body>
+</html>

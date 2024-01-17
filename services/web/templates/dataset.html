@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Test and debug</h1>
+{% for dataset in datasets %}
+{% endfor %}
+{% if files %}
+<table>
+    {% for file in files %}
+    <tr>
+        <td>{{ file['path'] }}</td>
+        <td>{{ file['loop_number'] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% for file in files %}
+{% endfor %}
+{% endif %}
+{% endblock content %}
