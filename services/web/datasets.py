@@ -84,6 +84,7 @@ def get_file(dataset: str, ordering: str, response_id: str, loop_number: str, cl
 
 
 def get_file_fixed(dataset: str, response_id: str, loop_number: int, client: pymongo.MongoClient):
+    # TODO: update user response
     response = client[DATABASE]['responses'].find_one(filter={'response_id': response_id}, projection={'_id': 0, 'response_id': 0})
 
     if response is not None and loop_number in response:
